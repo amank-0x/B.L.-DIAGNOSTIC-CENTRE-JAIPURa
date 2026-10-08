@@ -1,0 +1,8 @@
+{
+  "name": "Remix B.L. Diagnostic Center - Online Lab Booking \u0026 Reports",
+  "description": "B.L. Diagnostic Center - Online diagnostic test booking, home sample collection, and secure pathology report portal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
