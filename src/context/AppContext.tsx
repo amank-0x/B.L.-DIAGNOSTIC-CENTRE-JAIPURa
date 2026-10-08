@@ -270,7 +270,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshBookingsFromDatabase = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
       const res = await fetch(`${apiUrl}/api/admin/bookings`, {
         headers: adminSessionToken ? { 'Authorization': `Bearer ${adminSessionToken}` } : {}
       });
@@ -337,7 +337,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // Register user in database (background)
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
         fetch(`${apiUrl}/api/users/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -523,7 +523,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // every device and changed credentials are shared across browsers.
     let serverResult: { success: boolean; token?: string; admin?: { phone: string }; error?: string };
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
       const response = await fetch(`${apiUrl}/api/auth/admin-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -608,7 +608,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Save address to database (background)
     const cleanPhone = (currentUser.phone || currentUser.mobileNumber).replace(/\D/g, '').slice(-10);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
       fetch(`${apiUrl}/api/users/address`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -778,7 +778,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Directly sync to Express server in all environments
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
       fetch(`${apiUrl}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
