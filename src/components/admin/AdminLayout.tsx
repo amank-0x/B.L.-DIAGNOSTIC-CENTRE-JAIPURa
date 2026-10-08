@@ -13,7 +13,8 @@ import {
   ArrowLeft,
   Truck,
   Sparkles,
-  ClipboardList
+  ClipboardList,
+  Database
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { AdminDashboardOverview } from './AdminDashboardOverview';
@@ -27,6 +28,7 @@ import { AdminRevenueDashboard } from './AdminRevenueDashboard';
 import { AdminActivityLogs } from './AdminActivityLogs';
 import { AdminSettingsContent } from './AdminSettingsContent';
 import { AdminSecuritySettings } from './AdminSecuritySettings';
+import { AdminDatabaseManagement } from './AdminDatabaseManagement';
 import { AdminLoginGate } from './AdminLoginGate';
 
 export const AdminLayout: React.FC = () => {
@@ -242,6 +244,23 @@ export const AdminLayout: React.FC = () => {
             </button>
 
             <button
+              onClick={() => setActiveAdminTab('database')}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                activeAdminTab === 'database'
+                  ? 'bg-blue-900 text-white shadow-2xs'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 text-blue-400" />
+                <span>Supabase Database</span>
+              </div>
+              <span className="font-mono text-[9px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-bold">
+                SQL
+              </span>
+            </button>
+
+            <button
               onClick={() => setActiveAdminTab('settings')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 activeAdminTab === 'settings'
@@ -282,6 +301,7 @@ export const AdminLayout: React.FC = () => {
             {activeAdminTab === 'users' && <AdminUserManagement />}
             {activeAdminTab === 'revenue' && <AdminRevenueDashboard />}
             {activeAdminTab === 'activity_logs' && <AdminActivityLogs />}
+            {activeAdminTab === 'database' && <AdminDatabaseManagement />}
             {activeAdminTab === 'settings' && <AdminSettingsContent />}
             {activeAdminTab === 'security_settings' && <AdminSecuritySettings />}
           </div>

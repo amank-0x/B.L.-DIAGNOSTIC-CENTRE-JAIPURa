@@ -3,11 +3,27 @@ import type { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+import pg from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.VITE_SUPABASE_URL ||
+  'https://dgygaxatbjzjeumlvlgj.supabase.co';
+
+const supabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.VITE_SUPABASE_ANON_KEY ||
+  'sb_publishable_z1i6DsLPE4O-UAqG4_XFxQ_h3X26SwJ';
+
+const serverSupabase = createClient(supabaseUrl, supabaseKey);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -78,6 +94,109 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
+// Supabase Real-time Database Status Check
+app.get('/api/supabase/status', async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await serverSupabase.from('bookings').select('id').limit(1);
+
+    if (error) {
+      const isMissingTable =
+        error.code === 'PGRST205' ||
+        error.message?.includes('schema cache') ||
+        error.message?.includes('relation "public.bookings" does not exist') ||
+        error.message?.includes('404');
+
+      return res.json({
+        configured: true,
+        connected: true,
+        tablesReady: !isMissingTable,
+        projectUrl: supabaseUrl,
+        missingTable: isMissingTable ? 'public.bookings' : null,
+        error: error.message,
+        code: error.code,
+        sqlEditorUrl: `https://supabase.com/dashboard/project/dgygaxatbjzjeumlvlgj/sql/new`
+      });
+    }
+
+    return res.json({
+      configured: true,
+      connected: true,
+      tablesReady: true,
+      projectUrl: supabaseUrl,
+      sqlEditorUrl: `https://supabase.com/dashboard/project/dgygaxatbjzjeumlvlgj/sql/new`
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      configured: true,
+      connected: false,
+      tablesReady: false,
+      error: err.message
+    });
+  }
+});
+
+// Download/Fetch Supabase SQL Schema
+app.get('/api/supabase/schema-sql', (req: Request, res: Response) => {
+  try {
+    const schemaPath = path.resolve(__dirname, 'supabase', 'schema.sql');
+    if (fs.existsSync(schemaPath)) {
+      const sql = fs.readFileSync(schemaPath, 'utf8');
+      return res.type('text/plain').send(sql);
+    }
+    const altPath = path.resolve(__dirname, 'supabase', 'migrations', '20261007_init_bl_diagnostic.sql');
+    if (fs.existsSync(altPath)) {
+      const sql = fs.readFileSync(altPath, 'utf8');
+      return res.type('text/plain').send(sql);
+    }
+    return res.status(404).send('-- Schema file not found');
+  } catch (err: any) {
+    return res.status(500).send(`-- Error reading schema: ${err.message}`);
+  }
+});
+
+// Run Migration Directly via PostgreSQL connection string if provided
+app.post('/api/admin/run-migration', requireAdminAuth, async (req: Request, res: Response) => {
+  const { dbPassword, connectionString } = req.body;
+
+  let connStr = connectionString;
+  if (!connStr && dbPassword) {
+    connStr = `postgresql://postgres:${encodeURIComponent(dbPassword)}@db.dgygaxatbjzjeumlvlgj.supabase.co:5432/postgres`;
+  }
+
+  if (!connStr) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please provide either the Supabase database password or the full PostgreSQL connection string.'
+    });
+  }
+
+  const client = new pg.Client({
+    connectionString: connStr,
+    ssl: { rejectUnauthorized: false }
+  });
+
+  try {
+    await client.connect();
+    const schemaPath = path.resolve(__dirname, 'supabase', 'schema.sql');
+    const sql = fs.readFileSync(schemaPath, 'utf8');
+    await client.query(sql);
+    await client.end();
+
+    return res.json({
+      success: true,
+      message: 'Supabase PostgreSQL tables successfully created and seeded!'
+    });
+  } catch (err: any) {
+    try {
+      await client.end();
+    } catch {}
+    return res.status(500).json({
+      success: false,
+      error: `Database migration execution error: ${err.message}`
+    });
+  }
+});
+
 // 2. Admin Authentication (RBAC Protected)
 app.post('/api/auth/admin-login', (req: Request, res: Response) => {
   const { phone, pin } = req.body;
@@ -118,7 +237,7 @@ app.post('/api/auth/admin-login', (req: Request, res: Response) => {
 
   return res.status(401).json({
     success: false,
-    error: 'Incorrect administrator password. (Default master password: BLDiag@9649#Admin)'
+    error: 'Incorrect administrator password. Please verify your credentials and try again.'
   });
 });
 

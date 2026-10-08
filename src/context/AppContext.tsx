@@ -45,8 +45,8 @@ interface AppContextType {
   setActivePublicTab: (tab: string) => void;
   activeUserTab: 'dashboard' | 'bookings' | 'reports' | 'addresses' | 'notifications' | 'profile';
   setActiveUserTab: (tab: 'dashboard' | 'bookings' | 'reports' | 'addresses' | 'notifications' | 'profile') => void;
-  activeAdminTab: 'dashboard' | 'bookings' | 'collections' | 'reports' | 'tests' | 'packages' | 'users' | 'revenue' | 'activity_logs' | 'settings' | 'security_settings';
-  setActiveAdminTab: (tab: 'dashboard' | 'bookings' | 'collections' | 'reports' | 'tests' | 'packages' | 'users' | 'revenue' | 'activity_logs' | 'settings' | 'security_settings') => void;
+  activeAdminTab: 'dashboard' | 'bookings' | 'collections' | 'reports' | 'tests' | 'packages' | 'users' | 'revenue' | 'activity_logs' | 'settings' | 'security_settings' | 'database';
+  setActiveAdminTab: (tab: 'dashboard' | 'bookings' | 'collections' | 'reports' | 'tests' | 'packages' | 'users' | 'revenue' | 'activity_logs' | 'settings' | 'security_settings' | 'database') => void;
 
   // Authentication & Security Settings
   currentUser: UserProfile | null;
@@ -83,6 +83,7 @@ interface AppContextType {
 
   // Bookings
   bookings: Booking[];
+  refreshBookingsFromDatabase: () => Promise<void>;
   createBooking: (details: {
     address: UserAddress;
     bookingDate: string;
@@ -143,7 +144,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [activePublicTab, setActivePublicTab] = useState<string>('home');
   const [activeUserTab, setActiveUserTab] = useState<'dashboard' | 'bookings' | 'reports' | 'addresses' | 'notifications' | 'profile'>('dashboard');
-  const [activeAdminTab, setActiveAdminTab] = useState<'dashboard' | 'bookings' | 'collections' | 'reports' | 'tests' | 'packages' | 'users' | 'revenue' | 'activity_logs' | 'settings' | 'security_settings'>('dashboard');
+  const [activeAdminTab, setActiveAdminTab] = useState<'dashboard' | 'bookings' | 'collections' | 'reports' | 'tests' | 'packages' | 'users' | 'revenue' | 'activity_logs' | 'settings' | 'security_settings' | 'database'>('dashboard');
 
   // Persistence Initializers (Fresh users are NOT auto-logged in)
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
@@ -324,6 +325,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.warn('Supabase real-time subscription setup:', err);
     }
   }, []);
+
+  const refreshBookingsFromDatabase = async () => {
+    try {
+      const res = await SupabaseBackendService.fetchBookings(adminSessionToken || undefined);
+      if (res.success && res.data && res.data.length > 0) {
+        setBookings(prev => {
+          const remoteIds = new Set(res.data!.map(b => b.id));
+          const localOnly = prev.filter(b => !remoteIds.has(b.id));
+          return [...res.data!, ...localOnly];
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to refresh bookings from database:', err);
+    }
+  };
+
+  useEffect(() => {
+    refreshBookingsFromDatabase();
+  }, []);
+
+  useEffect(() => {
+    if (isAdminAuthenticated) {
+      refreshBookingsFromDatabase();
+    }
+  }, [isAdminAuthenticated]);
 
   // Auth Operations
   const loginUser = (phone: string, name?: string) => {
@@ -966,6 +992,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         cartTotal,
 
         bookings,
+        refreshBookingsFromDatabase,
         createBooking,
         updateBookingStatus,
         assignPhlebotomist,

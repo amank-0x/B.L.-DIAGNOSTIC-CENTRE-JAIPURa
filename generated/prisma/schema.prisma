@@ -1,0 +1,204 @@
+// Prisma Schema for B.L. Diagnostic Center
+// Generated from Supabase PostgreSQL Schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  phone     String    @unique
+  email     String?
+  age       Int?      @default(30)
+  gender    String?   @default("Male")
+  role      String    @default("USER")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  addresses Address[]
+  bookings  Booking[]
+  reports   Report[]
+
+  @@map("users")
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  label       String   @default("Home")
+  addressLine String   @map("address_line")
+  landmark    String?
+  city        String   @default("Jaipur")
+  pincode     String   @default("302021")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+model Category {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  slug         String   @unique
+  description  String?
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("categories")
+}
+
+model Test {
+  id                      String   @id @default(uuid())
+  code                    String   @unique
+  name                    String
+  categoryName            String   @map("category_name")
+  method                  String?
+  sample                  String?
+  instructions            String?
+  description             String?
+  reportingTime           String?  @default("Same Day (4 - 6 Hours)") @map("reporting_time")
+  generalPrice            Decimal  @default(0.00) @map("general_price") @db.Decimal(10, 2)
+  corporatePrice          Decimal  @default(0.00) @map("corporate_price") @db.Decimal(10, 2)
+  homeCollectionAvailable Boolean  @default(true) @map("home_collection_available")
+  active                  Boolean  @default(true)
+  popular                 Boolean  @default(false)
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@map("tests")
+}
+
+model Package {
+  id                 String   @id @default(uuid())
+  code               String   @unique
+  name               String
+  tagline            String?
+  description        String?
+  parametersCount    Int      @default(0) @map("parameters_count")
+  reportingTime      String?  @default("Same Day (6 - 8 Hours)") @map("reporting_time")
+  generalPrice       Decimal  @default(0.00) @map("general_price") @db.Decimal(10, 2)
+  corporatePrice     Decimal  @default(0.00) @map("corporate_price") @db.Decimal(10, 2)
+  sampleInstructions String?  @map("sample_instructions")
+  recommendedFor     String?  @map("recommended_for")
+  includedSummary    String?  @map("included_summary")
+  active             Boolean  @default(true)
+  popular            Boolean  @default(false)
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@map("packages")
+}
+
+model Booking {
+  id              String                 @id @default(uuid())
+  bookingNumber   String                 @unique @map("booking_number")
+  userId          String?                @map("user_id")
+  patientName     String                 @map("patient_name")
+  patientPhone    String                 @map("patient_phone")
+  patientEmail    String?                @map("patient_email")
+  addressSnapshot Json                   @default("{}") @map("address_snapshot")
+  bookingDate     DateTime               @default(now()) @map("booking_date")
+  collectionSlot  String                 @default("07:00 AM - 08:00 AM") @map("collection_slot")
+  subtotal        Decimal                @default(0.00) @db.Decimal(10, 2)
+  collectionFee   Decimal                @default(0.00) @map("collection_fee") @db.Decimal(10, 2)
+  discount        Decimal                @default(0.00) @db.Decimal(10, 2)
+  total           Decimal                @default(0.00) @db.Decimal(10, 2)
+  paymentMode     String                 @default("CASH_ON_COLLECTION") @map("payment_mode")
+  paymentStatus   String                 @default("PENDING") @map("payment_status")
+  bookingStatus   String                 @default("NEW") @map("booking_status")
+  notes           String?
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  user            User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items           BookingItem[]
+  statusHistory   BookingStatusHistory[]
+  collections     Collection[]
+  reports         Report[]
+
+  @@map("bookings")
+}
+
+model BookingItem {
+  id             String   @id @default(uuid())
+  bookingId      String   @map("booking_id")
+  itemType       String   @default("TEST") @map("item_type")
+  itemId         String   @map("item_id")
+  nameSnapshot   String   @map("name_snapshot")
+  priceSnapshot  Decimal  @default(0.00) @map("price_snapshot") @db.Decimal(10, 2)
+  sampleSnapshot String?  @map("sample_snapshot")
+  createdAt      DateTime @default(now()) @map("created_at")
+  booking        Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_items")
+}
+
+model BookingStatusHistory {
+  id        String   @id @default(uuid())
+  bookingId String   @map("booking_id")
+  status    String
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_status_history")
+}
+
+model Collection {
+  id             String    @id @default(uuid())
+  bookingId      String    @map("booking_id")
+  collectorId    String?   @map("collector_id")
+  collectorName  String?   @default("Designated Phlebotomist") @map("collector_name")
+  collectorPhone String?   @default("9649183422") @map("collector_phone")
+  sampleBarcode  String?   @map("sample_barcode")
+  date           DateTime  @default(now())
+  slot           String    @default("07:00 AM - 08:00 AM")
+  status         String    @default("SCHEDULED")
+  collectedAt    DateTime? @map("collected_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  booking        Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("collections")
+}
+
+model Report {
+  id            String   @id @default(uuid())
+  bookingId     String?  @map("booking_id")
+  bookingNumber String   @map("booking_number")
+  userId        String?  @map("user_id")
+  patientName   String   @map("patient_name")
+  patientAge    Int?     @default(35) @map("patient_age")
+  patientGender String?  @default("Male") @map("patient_gender")
+  results       Json     @default("[]")
+  doctorNotes   String?  @map("doctor_notes")
+  approvedBy    String?  @default("Dr. Vikas Singhal (M.D. Pathologist)") @map("approved_by")
+  filePath      String?  @map("file_path")
+  storageBucket String?  @default("reports") @map("storage_bucket")
+  isPublished   Boolean  @default(false) @map("is_published")
+  version       Int      @default(1)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  booking       Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("reports")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  actorId   String?  @default("admin") @map("actor_id")
+  actorRole String?  @default("SUPER_ADMIN") @map("actor_role")
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  details   String?
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("activity_logs")
+}

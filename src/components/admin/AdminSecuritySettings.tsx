@@ -312,7 +312,7 @@ export const AdminSecuritySettings: React.FC = () => {
                     minLength={6}
                     value={newPin}
                     onChange={e => setNewPin(e.target.value)}
-                    placeholder="Min 6 characters (e.g. BLDiag@9649#Admin)"
+                    placeholder="Enter new strong password"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono focus:bg-white focus:outline-none"
                   />
                 </div>

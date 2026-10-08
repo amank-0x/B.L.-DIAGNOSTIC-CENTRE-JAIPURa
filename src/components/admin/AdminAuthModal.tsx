@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShieldAlert, KeyRound, Lock, ArrowRight, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
+import { X, ShieldAlert, KeyRound, Lock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const AdminAuthModal: React.FC = () => {
@@ -26,16 +26,11 @@ export const AdminAuthModal: React.FC = () => {
     if (!result.success) {
       setErrorMsg(
         result.error ||
-        'Incorrect administrator password. Master password is BLDiag@9649#Admin.'
+        'Access denied. Please check your administrator credentials.'
       );
     } else {
       navigateToPortal('admin');
     }
-  };
-
-  const handleFillMasterPassword = () => {
-    setAdminPin('BLDiag@9649#Admin');
-    setErrorMsg('');
   };
 
   return (
@@ -77,7 +72,7 @@ export const AdminAuthModal: React.FC = () => {
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-700 space-y-1">
             <p className="font-semibold text-slate-900">Administrator Credentials:</p>
             <p className="text-[11px] text-slate-600">
-              Enter your administrator mobile number (default: <span className="font-mono font-bold text-blue-900">+91 9649183422</span>) and master password.
+              Enter your authorized administrator mobile number or ID and password to access the lab terminal.
             </p>
           </div>
 
@@ -104,30 +99,17 @@ export const AdminAuthModal: React.FC = () => {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-semibold text-slate-700">
-                  Administrator Master Password
-                </label>
-                <button
-                  type="button"
-                  onClick={handleFillMasterPassword}
-                  className="text-[10px] text-blue-600 hover:text-blue-800 underline cursor-pointer flex items-center gap-1"
-                >
-                  <Sparkles className="w-3 h-3 text-blue-500" />
-                  <span>Paste Master Password</span>
-                </button>
-              </div>
+              <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                Administrator Master Password
+              </label>
               <input
                 type="password"
                 required
                 value={adminPin}
                 onChange={e => setAdminPin(e.target.value)}
-                placeholder="Enter master password (e.g. BLDiag@9649#Admin)"
+                placeholder="Enter administrator password"
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none"
               />
-              <p className="text-[10px] text-slate-500 mt-1">
-                Master Password: <span className="font-mono font-semibold text-slate-800">BLDiag@9649#Admin</span> (or Admin@123)
-              </p>
             </div>
 
             <button

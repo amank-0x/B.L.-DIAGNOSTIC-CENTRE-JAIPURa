@@ -1,4 +1,4 @@
--- =====================================================================
+export const SUPABASE_PRODUCTION_SCHEMA_SQL = `-- =====================================================================
 -- B.L. DIAGNOSTIC CENTER — SUPABASE POSTGRESQL PRODUCTION SCHEMA
 -- Run this script in your Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/dgygaxatbjzjeumlvlgj/sql/new
@@ -278,3 +278,4 @@ VALUES
   ('PKG-SENIOR-CITIZEN', 'Senior Citizen Active Care Package', 'Customized health monitoring for 60+ individuals', 'Comprehensive organ health and arthritis/bone density indicators.', 65, 1299.00, true),
   ('PKG-DIABETES-CARE', 'Diabetes Comprehensive Monitoring', 'Quarterly diabetic evaluation & organ protection', 'HbA1c, Fasting & PP Glucose, Serum Creatinine, Microalbumin, and Lipid Profile.', 32, 899.00, true)
 ON CONFLICT (code) DO NOTHING;
+`;

@@ -5,15 +5,19 @@ const supabaseUrl =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
   (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_URL) ||
   (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SUPABASE_URL) ||
-  'https://placeholder-bl-diagnostic.supabase.co';
+  'https://dgygaxatbjzjeumlvlgj.supabase.co';
 
 const supabaseAnonKey =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
   (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
-  (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
-  'placeholder-anon-key';
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY) ||
+  (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) ||
+  (typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env?.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)) ||
+  'sb_publishable_z1i6DsLPE4O-UAqG4_XFxQ_h3X26SwJ';
 
 export const isSupabaseConfigured =
+  Boolean(supabaseUrl) &&
+  Boolean(supabaseAnonKey) &&
   supabaseUrl !== 'https://placeholder-bl-diagnostic.supabase.co' &&
   supabaseAnonKey !== 'placeholder-anon-key';
 

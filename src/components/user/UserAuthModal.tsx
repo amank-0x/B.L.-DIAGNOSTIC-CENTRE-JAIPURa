@@ -144,28 +144,19 @@ export const UserAuthModal: React.FC = () => {
                   required
                   value={otp}
                   onChange={e => setOtp(e.target.value)}
-                  placeholder={`e.g. ${generatedOtp}`}
+                  placeholder={`Enter ${otpLen}-digit verification code`}
                   className="w-full px-3 py-2.5 text-center font-mono text-lg font-bold tracking-widest bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none"
                 />
               </div>
 
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setOtp(generatedOtp)}
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg cursor-pointer"
-                >
-                  Fill Code ({generatedOtp})
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{isLoading ? 'Verifying...' : 'Verify & Enter Portal'}</span>
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{isLoading ? 'Verifying...' : 'Verify & Enter Portal'}</span>
+              </button>
 
               <button
                 type="button"

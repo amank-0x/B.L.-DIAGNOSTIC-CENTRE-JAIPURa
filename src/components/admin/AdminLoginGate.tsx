@@ -10,8 +10,7 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  AlertTriangle,
-  Sparkles
+  AlertTriangle
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -42,14 +41,9 @@ export const AdminLoginGate: React.FC = () => {
     if (!result.success) {
       setErrorMsg(
         result.error ||
-        'Incorrect administrator password. Please enter master password: BLDiag@9649#Admin.'
+        'Access denied. Please check your credentials and try again.'
       );
     }
-  };
-
-  const handleFillMasterPassword = () => {
-    setPin('BLDiag@9649#Admin');
-    setErrorMsg('');
   };
 
   return (
@@ -183,27 +177,16 @@ export const AdminLoginGate: React.FC = () => {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[11px] font-semibold text-slate-300">
-                    Administrator Master Password
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleFillMasterPassword}
-                    className="text-[10px] text-blue-400 hover:text-blue-300 underline cursor-pointer flex items-center gap-1"
-                    title="Fill master password automatically"
-                  >
-                    <Sparkles className="w-3 h-3 text-blue-400" />
-                    <span>Paste Master Password</span>
-                  </button>
-                </div>
+                <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
+                  Administrator Master Password
+                </label>
                 <div className="relative">
                   <input
                     type={showPin ? 'text' : 'password'}
                     required
                     value={pin}
                     onChange={e => setPin(e.target.value)}
-                    placeholder="Enter master password (e.g. BLDiag@9649#Admin)"
+                    placeholder="Enter administrator password"
                     className="w-full bg-slate-950 px-3 py-2.5 text-xs text-white font-mono rounded-lg border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-10"
                   />
                   <button
@@ -213,10 +196,6 @@ export const AdminLoginGate: React.FC = () => {
                   >
                     {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
-                </div>
-                <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950/60 px-2.5 py-1.5 rounded-lg border border-slate-800">
-                  <span>Default Master Password: <strong className="text-white font-mono select-all">BLDiag@9649#Admin</strong></span>
-                  <span className="text-slate-500">(or Admin@123)</span>
                 </div>
               </div>
 
