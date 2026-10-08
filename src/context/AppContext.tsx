@@ -472,6 +472,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const inputIdentifier = phone?.trim() || authSettings.adminAuthorizedPhone || '9649183422';
     const inputPin = pin?.trim() || '';
 
+    // Rate limiting: Track failed attempts
+    const failedAttemptsKey = 'bl_admin_failed_attempts';
+    const lastAttemptKey = 'bl_admin_last_attempt';
+    const currentFailedAttempts = parseInt(localStorage.getItem(failedAttemptsKey) || '0', 10);
+    const lastAttemptTime = parseInt(localStorage.getItem(lastAttemptKey) || '0', 10);
+    const now = Date.now();
+
+    // Lockout after 5 failed attempts for 5 minutes
+    if (currentFailedAttempts >= 5 && now - lastAttemptTime < 5 * 60 * 1000) {
+      const remainingTime = Math.ceil((5 * 60 * 1000 - (now - lastAttemptTime)) / 1000 / 60);
+      logAdminAction('LOGIN_LOCKED', 'SETTINGS', 'admin-session', `Account locked for ${remainingTime} minutes due to multiple failed attempts`);
+      return {
+        success: false,
+        error: `Account temporarily locked. Try again in ${remainingTime} minute(s).`
+      };
+    }
+
+    // Reset failed attempts if lockout period has passed
+    if (currentFailedAttempts >= 5 && now - lastAttemptTime >= 5 * 60 * 1000) {
+      localStorage.setItem(failedAttemptsKey, '0');
+    }
+
     // Local verification
     const isAuthorized = inputIdentifier === authSettings.adminAuthorizedPhone && inputPin === authSettings.adminPin;
 
@@ -483,6 +505,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setAdminSessionToken(token);
       localStorage.setItem('bl_admin_token', token);
       localStorage.setItem('bl_admin_auth', 'true');
+      localStorage.removeItem(failedAttemptsKey);
+      localStorage.removeItem(lastAttemptKey);
       setIsAdminAuthModalOpen(false);
       setCurrentPortal('admin');
       setActiveAdminTab('dashboard');
@@ -493,9 +517,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast('Admin Access Granted. Welcome, Administrator!');
       return { success: true };
     }
-    logAdminAction('LOGIN_FAILED', 'SETTINGS', 'admin-session', `Failed login attempt with identifier ${inputIdentifier}`);
-    showToast('Access denied. Invalid credentials.');
-    return { success: false, error: 'Access denied. Invalid credentials.' };
+
+    // Track failed attempt
+    const newFailedAttempts = currentFailedAttempts + 1;
+    localStorage.setItem(failedAttemptsKey, newFailedAttempts.toString());
+    localStorage.setItem(lastAttemptKey, now.toString());
+    const remainingAttempts = 5 - newFailedAttempts;
+
+    logAdminAction('LOGIN_FAILED', 'SETTINGS', 'admin-session', `Failed login attempt with identifier ${inputIdentifier}. Attempts: ${newFailedAttempts}/5`);
+    const errorMsg = remainingAttempts > 0
+      ? `Invalid credentials. ${remainingAttempts} attempt(s) remaining.`
+      : 'Account temporarily locked for 5 minutes due to multiple failed attempts.';
+    showToast(errorMsg);
+    return { success: false, error: errorMsg };
   };
 
   const logoutAdmin = () => {

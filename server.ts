@@ -31,7 +31,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Server-side Authentication & Security Settings
 const serverAuthSettings = {
   adminPhone: '9649183422',
-  adminPin: 'BLDiag@9649#Admin',
+  adminPin: 'BL@Diag#2026$Secure!Admin',
   sessionTimeoutMinutes: 30,
   requireOtpForAdmin: false,
   allowPatientDemoLogin: false,
@@ -82,22 +82,8 @@ app.post('/api/auth/admin-login', (req: Request, res: Response) => {
   const cleanPhone = rawId.replace(/\D/g, '').slice(-10);
   const inputPin = String(pin || '').trim();
 
-  const isPasswordValid =
-    inputPin === serverAuthSettings.adminPin ||
-    inputPin === 'BLDiag@9649#Admin' ||
-    inputPin === 'Admin@123' ||
-    inputPin === 'admin@123' ||
-    inputPin === 'Admin123' ||
-    inputPin === 'admin123' ||
-    inputPin === 'admin' ||
-    inputPin === 'Admin' ||
-    inputPin === '1234' ||
-    inputPin === '123456' ||
-    inputPin === 'admin2026' ||
-    inputPin === '9649' ||
-    inputPin === '83422' ||
-    inputPin === '9649183422' ||
-    inputPin === 'bldiagnostic';
+  // Only accept the strong admin password
+  const isPasswordValid = inputPin === serverAuthSettings.adminPin;
 
   if (isPasswordValid) {
     const adminPhone = cleanPhone.length === 10 ? cleanPhone : (serverAuthSettings.adminPhone || '9649183422');
