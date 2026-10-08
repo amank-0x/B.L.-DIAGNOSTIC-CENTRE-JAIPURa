@@ -33,20 +33,7 @@ export const UserAuthModal: React.FC = () => {
     setIsLoading(true);
     setIsLoading(false);
     if (otp === generatedOtp || otp === '123456' || otp === '4287') {
-      // Register user in database
-      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-      try {
-        await fetch('http://localhost:5000/api/users/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name,
-            phone: cleanPhone
-          })
-        });
-      } catch (err) {
-        console.warn('User registration background save:', err);
-      }
+      // loginUser performs the single server-backed registration/sync.
       loginUser(phone, name);
       setStep('phone');
     }

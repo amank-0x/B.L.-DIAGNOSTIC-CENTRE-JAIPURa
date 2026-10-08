@@ -29,13 +29,13 @@ export const AdminLoginGate: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setIsSubmitting(true);
 
     const inputId = phone.trim() || '9649183422';
-    const result = loginAdmin(inputId, pin.trim());
+    const result = await loginAdmin(inputId, pin.trim());
     setIsSubmitting(false);
 
     if (!result.success) {

@@ -116,7 +116,7 @@ export const CartDrawer: React.FC = () => {
       // Save address to database
       const cleanPhone = (currentUser.phone || currentUser.mobileNumber).replace(/\D/g, '').slice(-10);
       try {
-        fetch('http://localhost:5000/api/users/address', {
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/users/address`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -161,7 +161,7 @@ export const CartDrawer: React.FC = () => {
 
       // Register guest user in database
       try {
-        await fetch('http://localhost:5000/api/users/register', {
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/users/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -220,7 +220,7 @@ export const CartDrawer: React.FC = () => {
     // Save new address to database if it was created during checkout
     if (isNewAddress && cleanPhoneDigits.length === 10) {
       try {
-        await fetch('http://localhost:5000/api/users/address', {
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/users/address`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -18,11 +18,11 @@ export const AdminAuthModal: React.FC = () => {
 
   if (!isAdminAuthModalOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     const inputId = adminPhone.trim() || '9649183422';
-    const result = loginAdmin(inputId, adminPin.trim());
+    const result = await loginAdmin(inputId, adminPin.trim());
     if (!result.success) {
       setErrorMsg(
         result.error ||

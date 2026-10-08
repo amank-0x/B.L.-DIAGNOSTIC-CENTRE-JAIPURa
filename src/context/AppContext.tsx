@@ -48,7 +48,7 @@ interface AppContextType {
   changeAdminPin: (oldPin: string, newPin: string) => { success: boolean; error?: string };
   loginUser: (phone: string, name?: string) => void;
   logoutUser: () => void;
-  loginAdmin: (phone: string, pin: string) => { success: boolean; error?: string };
+  loginAdmin: (phone: string, pin: string) => Promise<{ success: boolean; error?: string }>;
   logoutAdmin: () => void;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
   addUserAddress: (address: Omit<UserAddress, 'id' | 'userId'>) => void;
@@ -270,14 +270,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshBookingsFromDatabase = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/admin/bookings', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await fetch(`${apiUrl}/api/admin/bookings`, {
         headers: adminSessionToken ? { 'Authorization': `Bearer ${adminSessionToken}` } : {}
       });
       if (res.ok) {
         const json = await res.json();
         if (json.data && Array.isArray(json.data)) {
           setBookings(prev => {
-            const remoteIds = new Set(json.data.map(b => b.id));
+            const remoteIds = new Set(json.data.map((b: Booking) => b.id));
             const localOnly = prev.filter(b => !remoteIds.has(b.id));
             return [...json.data, ...localOnly];
           });
@@ -336,14 +337,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // Register user in database (background)
       try {
-        fetch('http://localhost:5000/api/users/register', {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        fetch(`${apiUrl}/api/users/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: patientName,
             phone: cleanPhone
           })
-        }).catch(err => console.warn('User registration background save:', err));
+        }).then(async response => {
+          if (!response.ok) return;
+          const payload = await response.json();
+          const savedUser = payload.data;
+          if (savedUser) {
+            // The database is the shared source of truth, so a login on a new
+            // device receives the same user identity instead of a local ID.
+            setCurrentUser(prev => prev ? {
+              ...prev,
+              id: savedUser.id,
+              name: savedUser.name,
+              phone: savedUser.phone,
+              mobileNumber: savedUser.phone,
+              email: savedUser.email || prev.email,
+              age: savedUser.age || prev.age,
+              gender: savedUser.gender || prev.gender
+            } : prev);
+          }
+          const bookingsResponse = await fetch(`${apiUrl}/api/bookings?phone=${encodeURIComponent(cleanPhone)}`);
+          if (bookingsResponse.ok) {
+            const bookingsPayload = await bookingsResponse.json();
+            if (Array.isArray(bookingsPayload.data)) setBookings(bookingsPayload.data);
+          }
+        }).catch(err => console.warn('User account sync:', err));
       } catch (err) {
         console.warn('User registration background save:', err);
       }
@@ -468,7 +493,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true };
   };
 
-  const loginAdmin = (phone: string, pin: string): { success: boolean; error?: string } => {
+  const loginAdmin = async (phone: string, pin: string): Promise<{ success: boolean; error?: string }> => {
     const inputIdentifier = phone?.trim() || authSettings.adminAuthorizedPhone || '9649183422';
     const inputPin = pin?.trim() || '';
 
@@ -494,13 +519,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(failedAttemptsKey, '0');
     }
 
-    // Local verification
-    const isAuthorized = inputIdentifier === authSettings.adminAuthorizedPhone && inputPin === authSettings.adminPin;
+    // Verify against the backend so the same administrator password works on
+    // every device and changed credentials are shared across browsers.
+    let serverResult: { success: boolean; token?: string; admin?: { phone: string }; error?: string };
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/auth/admin-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: inputIdentifier, pin: inputPin })
+      });
+      serverResult = await response.json();
+    } catch {
+      serverResult = { success: false, error: 'Unable to reach the authentication server.' };
+    }
+    const isAuthorized = serverResult.success;
 
     if (isAuthorized) {
       const cleanDigits = String(inputIdentifier).replace(/\D/g, '').slice(-10);
       const effectivePhone = cleanDigits.length === 10 ? cleanDigits : (authSettings.adminAuthorizedPhone || '9649183422');
-      const token = `bld-jwt-${btoa(`${effectivePhone}-${Date.now()}`)}`;
+      const token = serverResult.token || `bld-jwt-${btoa(`${effectivePhone}-${Date.now()}`)}`;
       setIsAdminAuthenticated(true);
       setAdminSessionToken(token);
       localStorage.setItem('bl_admin_token', token);
@@ -525,9 +563,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const remainingAttempts = 5 - newFailedAttempts;
 
     logAdminAction('LOGIN_FAILED', 'SETTINGS', 'admin-session', `Failed login attempt with identifier ${inputIdentifier}. Attempts: ${newFailedAttempts}/5`);
-    const errorMsg = remainingAttempts > 0
+    const errorMsg = serverResult.error || (remainingAttempts > 0
       ? `Invalid credentials. ${remainingAttempts} attempt(s) remaining.`
-      : 'Account temporarily locked for 5 minutes due to multiple failed attempts.';
+      : 'Account temporarily locked for 5 minutes due to multiple failed attempts.');
     showToast(errorMsg);
     return { success: false, error: errorMsg };
   };
@@ -570,7 +608,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Save address to database (background)
     const cleanPhone = (currentUser.phone || currentUser.mobileNumber).replace(/\D/g, '').slice(-10);
     try {
-      fetch('http://localhost:5000/api/users/address', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      fetch(`${apiUrl}/api/users/address`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -739,7 +778,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Directly sync to Express server in all environments
     try {
-      fetch('http://localhost:5000/api/bookings', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      fetch(`${apiUrl}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

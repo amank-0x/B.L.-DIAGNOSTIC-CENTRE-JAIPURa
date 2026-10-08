@@ -109,8 +109,7 @@ app.post('/api/auth/admin-login', (req: Request, res: Response) => {
 app.get('/api/auth/verify-token', (req: Request, res: Response) => {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer bld-jwt-')) {
-    return res.jsudo fuser -k 8080/tcp
-son({ success: true, valid: true, role: 'SUPER_ADMIN' });
+    return res.json({ success: true, valid: true, role: 'SUPER_ADMIN' });
   }
   return res.status(401).json({ success: false, valid: false });
 });
@@ -162,7 +161,7 @@ app.post('/api/admin/change-pin', requireAdminAuth, (req: Request, res: Response
 app.post('/api/users/register', async (req: Request, res: Response) => {
   try {
     const { name, phone, email, age, gender } = req.body;
-    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
 
     if (!name || !cleanPhone || cleanPhone.length !== 10) {
       return res.status(400).json({ error: 'Name and valid 10-digit phone number are required' });
