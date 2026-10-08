@@ -253,7 +253,7 @@ export const AdminLayout: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <Database className="w-4 h-4 text-blue-400" />
-                <span>Supabase Database</span>
+                <span>Database</span>
               </div>
               <span className="font-mono text-[9px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-bold">
                 SQL

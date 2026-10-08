@@ -13,14 +13,13 @@ import { ALL_IMPORTED_TESTS, ALL_IMPORTED_PACKAGES } from './allTestsCatalogue';
 
 export const INITIAL_AUTH_SETTINGS = {
   adminAuthorizedPhone: '9649183422',
-  adminPin: 'BLDiag@9649#Admin',
+  adminPin: 'BL@Diag#2026$Secure!Admin',
   sessionTimeoutMinutes: 30,
   requireOtpForAdmin: false,
   allowPatientDemoLogin: false,
   otpLength: 4 as const,
   maxLoginAttempts: 5,
-  jwtSecretConfigured: true,
-  supabaseAuthActive: true
+  jwtSecretConfigured: true
 };
 
 export const INITIAL_WEBSITE_CONFIG: WebsiteConfig = {

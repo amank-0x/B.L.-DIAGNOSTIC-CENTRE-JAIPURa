@@ -105,7 +105,7 @@ export const AdminBookingManagement: React.FC = () => {
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors cursor-pointer border border-slate-300 disabled:opacity-60 shrink-0"
-            title="Fetch latest orders from Supabase database"
+            title="Fetch latest orders from database"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
             <span>{isRefreshing ? 'Syncing...' : 'Sync Orders'}</span>

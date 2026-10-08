@@ -299,7 +299,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/app/applet/generated/prisma",
+      "value": "/home/amnkarn/Devlopment/Projects/B.L.-DIAGNOSTIC-CENTRE-JAIPURa/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -313,7 +313,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/app/applet/prisma/schema.prisma",
+    "sourceFilePath": "/home/amnkarn/Devlopment/Projects/B.L.-DIAGNOSTIC-CENTRE-JAIPURa/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {

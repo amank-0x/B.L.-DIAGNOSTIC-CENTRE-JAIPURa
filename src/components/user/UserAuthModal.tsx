@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, Smartphone, ShieldCheck, ArrowRight, CheckCircle2, User } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { sendSupabasePhoneOtp, verifySupabasePhoneOtp } from '../../lib/supabase';
 
 export const UserAuthModal: React.FC = () => {
   const { isUserAuthModalOpen, setIsUserAuthModalOpen, loginUser, currentUser, authSettings, navigateToPortal } = useApp();
@@ -25,7 +24,6 @@ export const UserAuthModal: React.FC = () => {
       ? Math.floor(100000 + Math.random() * 900000).toString()
       : Math.floor(1000 + Math.random() * 9000).toString();
     setGeneratedOtp(randomOtp);
-    await sendSupabasePhoneOtp(cleanDigits);
     setIsLoading(false);
     setStep('otp');
   };
@@ -33,9 +31,22 @@ export const UserAuthModal: React.FC = () => {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const verify = await verifySupabasePhoneOtp(phone, otp);
     setIsLoading(false);
-    if (verify.success || otp === generatedOtp || otp === '123456' || otp === '4287') {
+    if (otp === generatedOtp || otp === '123456' || otp === '4287') {
+      // Register user in database
+      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+      try {
+        await fetch('http://localhost:5000/api/users/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            phone: cleanPhone
+          })
+        });
+      } catch (err) {
+        console.warn('User registration background save:', err);
+      }
       loginUser(phone, name);
       setStep('phone');
     }

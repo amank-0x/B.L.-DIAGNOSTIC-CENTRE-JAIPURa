@@ -402,13 +402,13 @@ export const AdminSecuritySettings: React.FC = () => {
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs space-y-3 text-xs">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
               <Database className="w-4 h-4 text-blue-600" />
-              <h3 className="font-bold text-slate-900 text-sm">Supabase & Cloud Security</h3>
+              <h3 className="font-bold text-slate-900 text-sm">Database & Cloud Security</h3>
             </div>
 
             <div className="space-y-2 text-slate-700">
               <div className="flex items-center justify-between py-1">
                 <span className="text-slate-500">Database Driver:</span>
-                <span className="font-mono font-bold text-slate-900">PostgreSQL (Supabase)</span>
+                <span className="font-mono font-bold text-slate-900">PostgreSQL (Neon)</span>
               </div>
 
               <div className="flex items-center justify-between py-1">
@@ -418,7 +418,7 @@ export const AdminSecuritySettings: React.FC = () => {
 
               <div className="flex items-center justify-between py-1">
                 <span className="text-slate-500">Diagnostic Reports Storage:</span>
-                <span className="font-mono text-emerald-700 font-bold">Private Bucket / Signed URLs</span>
+                <span className="font-mono text-emerald-700 font-bold">Local State / Browser Print</span>
               </div>
 
               <div className="flex items-center justify-between py-1">

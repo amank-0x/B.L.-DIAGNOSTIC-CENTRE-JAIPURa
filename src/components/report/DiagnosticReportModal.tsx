@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { DiagnosticReport } from '../../types';
 import { X, Printer, Download, CheckCircle2, ShieldCheck, Building2, Phone, MapPin, ExternalLink } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { getSignedReportDownloadUrl } from '../../lib/supabase';
 
 interface Props {
   report: DiagnosticReport;
@@ -12,23 +11,13 @@ interface Props {
 export const DiagnosticReportModal: React.FC<Props> = ({ report, onClose }) => {
   const { websiteConfig, bookings, showToast } = useApp();
   const booking = bookings.find(b => b.id === report.bookingId || b.bookingNumber === report.bookingNumber);
-  const [isDownloading, setIsDownloading] = useState(false);
 
   const handlePrint = () => {
     window.print();
   };
 
-  const handleDownloadSignedUrl = async () => {
-    if (report.downloadUrl) {
-      setIsDownloading(true);
-      const res = await getSignedReportDownloadUrl(report.downloadUrl);
-      setIsDownloading(false);
-      if (res.signedUrl) {
-        window.open(res.signedUrl, '_blank');
-        return;
-      }
-    }
-    // Default fallback to browser print/PDF export
+  const handleDownload = () => {
+    // Default to browser print/PDF export
     handlePrint();
   };
 
@@ -46,12 +35,11 @@ export const DiagnosticReportModal: React.FC<Props> = ({ report, onClose }) => {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={handleDownloadSignedUrl}
-              disabled={isDownloading}
+              onClick={handleDownload}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer"
             >
               <Download className="w-4 h-4" />
-              <span>{isDownloading ? 'Fetching...' : 'Download PDF'}</span>
+              <span>Download PDF</span>
             </button>
             <button
               onClick={handlePrint}

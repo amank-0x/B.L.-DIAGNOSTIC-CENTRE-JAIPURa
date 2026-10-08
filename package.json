@@ -15,8 +15,6 @@
     "@neondatabase/serverless": "^1.2.0",
     "@prisma/adapter-neon": "^7.10.0",
     "@prisma/client": "6.19.3",
-    "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.117.3",
     "@tailwindcss/vite": "^4.3.3",
     "@types/pg": "^8.23.1",
     "@vitejs/plugin-react": "^6.1.1",

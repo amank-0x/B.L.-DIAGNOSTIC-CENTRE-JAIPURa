@@ -80,7 +80,7 @@ export const AdminDashboardOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* Supabase Database Fast-Status Bar */}
+      {/* Database Fast-Status Bar */}
       <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0">
@@ -88,10 +88,7 @@ export const AdminDashboardOverview: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-900">Supabase PostgreSQL Database</span>
-              <span className="text-[10px] bg-slate-100 text-slate-600 font-mono px-1.5 py-0.5 rounded">
-                dgygaxatbjzjeumlvlgj
-              </span>
+              <span className="text-xs font-bold text-slate-900">PostgreSQL Database</span>
             </div>
             <p className="text-[11px] text-slate-500">
               Manage database migrations, live schema verification, and order data synchronization.
