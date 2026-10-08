@@ -1,14 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
-  supabase,
-  isSupabaseConfigured,
-  sendSupabasePhoneOtp,
-  verifySupabasePhoneOtp,
-  uploadReportPdfToSupabase,
-  getSignedReportDownloadUrl
-} from '../lib/supabase';
-import { SupabaseBackendService } from '../services/supabase.service';
-import {
   DiagnosticTest,
   HealthPackage,
   Booking,
@@ -277,64 +268,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('bl_admin_logs', JSON.stringify(adminLogs));
   }, [adminLogs]);
 
-  // Supabase Real-time Database Synchronizer
-  useEffect(() => {
-    if (!isSupabaseConfigured) return;
-
-    try {
-      const channel = supabase
-        .channel('schema-db-changes')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'bookings' },
-          payload => {
-            if (payload.new && (payload.new as any).id) {
-              const remote = payload.new as any;
-              setBookings(prev => {
-                const existing = prev.find(b => b.id === remote.id);
-                if (existing) {
-                  return prev.map(b => (b.id === remote.id ? { ...b, ...remote } : b));
-                }
-                return [remote, ...prev];
-              });
-            }
-          }
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'reports' },
-          payload => {
-            if (payload.new && (payload.new as any).id) {
-              const remote = payload.new as any;
-              setReports(prev => {
-                const existing = prev.find(r => r.id === remote.id);
-                if (existing) {
-                  return prev.map(r => (r.id === remote.id ? { ...r, ...remote } : r));
-                }
-                return [remote, ...prev];
-              });
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    } catch (err) {
-      console.warn('Supabase real-time subscription setup:', err);
-    }
-  }, []);
-
   const refreshBookingsFromDatabase = async () => {
     try {
-      const res = await SupabaseBackendService.fetchBookings(adminSessionToken || undefined);
-      if (res.success && res.data && res.data.length > 0) {
-        setBookings(prev => {
-          const remoteIds = new Set(res.data!.map(b => b.id));
-          const localOnly = prev.filter(b => !remoteIds.has(b.id));
-          return [...res.data!, ...localOnly];
-        });
+      const res = await fetch('http://localhost:5000/api/admin/bookings', {
+        headers: adminSessionToken ? { 'Authorization': `Bearer ${adminSessionToken}` } : {}
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data)) {
+          setBookings(prev => {
+            const remoteIds = new Set(json.data.map(b => b.id));
+            const localOnly = prev.filter(b => !remoteIds.has(b.id));
+            return [...json.data, ...localOnly];
+          });
+        }
       }
     } catch (err) {
       console.warn('Failed to refresh bookings from database:', err);
@@ -386,6 +333,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ]
       };
       setCurrentUser(newUser);
+
+      // Register user in database (background)
+      try {
+        fetch('http://localhost:5000/api/users/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: patientName,
+            phone: cleanPhone
+          })
+        }).catch(err => console.warn('User registration background save:', err));
+      } catch (err) {
+        console.warn('User registration background save:', err);
+      }
     }
     setIsUserAuthModalOpen(false);
     showToast(`Welcome back! Logged in as ${name || cleanPhone}`);
@@ -485,9 +446,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         authSettings: updated,
         adminPhone: updated.adminAuthorizedPhone || cfg.adminPhone
       }));
-      if (adminSessionToken) {
-        SupabaseBackendService.updateServerAuthSettings(updated, adminSessionToken);
-      }
       return updated;
     });
     logAdminAction('UPDATE', 'SETTINGS', 'auth-settings', 'Updated system authentication and security access policies');
@@ -505,9 +463,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     updateAuthSettings({ adminPin: newPin });
-    if (adminSessionToken) {
-      SupabaseBackendService.changeServerAdminPin(oldPin, newPin, adminSessionToken);
-    }
     logAdminAction('UPDATE', 'SETTINGS', 'admin-pin', 'Administrator master authorization password was changed');
     showToast('Administrator password updated successfully.');
     return { success: true };
@@ -516,13 +471,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const loginAdmin = (phone: string, pin: string): { success: boolean; error?: string } => {
     const inputIdentifier = phone?.trim() || authSettings.adminAuthorizedPhone || '9649183422';
     const inputPin = pin?.trim() || '';
-    const verify = SupabaseBackendService.verifyAdminAccess(
-      inputIdentifier,
-      inputPin,
-      authSettings.adminAuthorizedPhone,
-      authSettings.adminPin
-    );
-    if (verify.authorized) {
+
+    // Local verification
+    const isAuthorized = inputIdentifier === authSettings.adminAuthorizedPhone && inputPin === authSettings.adminPin;
+
+    if (isAuthorized) {
       const cleanDigits = String(inputIdentifier).replace(/\D/g, '').slice(-10);
       const effectivePhone = cleanDigits.length === 10 ? cleanDigits : (authSettings.adminAuthorizedPhone || '9649183422');
       const token = `bld-jwt-${btoa(`${effectivePhone}-${Date.now()}`)}`;
@@ -538,20 +491,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       logAdminAction('LOGIN', 'SETTINGS', 'admin-session', `Admin authenticated with ${effectivePhone}`);
       showToast('Admin Access Granted. Welcome, Administrator!');
-
-      // Sync with server session
-      SupabaseBackendService.requestAdminServerLogin(inputIdentifier, inputPin).then(res => {
-        if (res.token) {
-          setAdminSessionToken(res.token);
-          localStorage.setItem('bl_admin_token', res.token);
-        }
-      });
       return { success: true };
     }
     logAdminAction('LOGIN_FAILED', 'SETTINGS', 'admin-session', `Failed login attempt with identifier ${inputIdentifier}`);
-    const errorMsg = verify.error || 'Access denied.';
-    showToast(errorMsg);
-    return { success: false, error: errorMsg };
+    showToast('Access denied. Invalid credentials.');
+    return { success: false, error: 'Access denied. Invalid credentials.' };
   };
 
   const logoutAdmin = () => {
@@ -588,6 +532,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...currentUser,
       addresses: updatedAddresses
     });
+
+    // Save address to database (background)
+    const cleanPhone = (currentUser.phone || currentUser.mobileNumber).replace(/\D/g, '').slice(-10);
+    try {
+      fetch('http://localhost:5000/api/users/address', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: cleanPhone,
+          address: {
+            label: address.label,
+            addressLine: address.addressLine,
+            landmark: address.landmark,
+            city: address.city,
+            pincode: address.pincode,
+            isDefault: address.isDefault
+          }
+        })
+      }).catch(err => console.warn('Address background save:', err));
+    } catch (err) {
+      console.warn('Address background save:', err);
+    }
+
     showToast('New address saved!');
   };
 
@@ -736,14 +703,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       type: 'BOOKING'
     });
 
-    // Persist to Supabase Database & Backend API
-    SupabaseBackendService.createBooking(newBooking).catch(err => {
-      console.warn('Persisted in local state. Supabase background write:', err);
-    });
-
     // Directly sync to Express server in all environments
     try {
-      fetch('/api/bookings', {
+      fetch('http://localhost:5000/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -785,12 +747,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return updated;
       })
     );
-
-    if (updatedBookingRecord) {
-      SupabaseBackendService.updateBookingStatus(bookingId, newStatus, note).catch(err => {
-        console.warn('Updated in local state. Supabase background write:', err);
-      });
-    }
 
     const booking = bookings.find(b => b.id === bookingId);
     if (booking) {
@@ -881,11 +837,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setReports(prev => [newReport, ...prev.filter(r => r.bookingId !== bookingId)]);
-
-    // Persist to Supabase PostgreSQL & Storage metadata
-    SupabaseBackendService.publishReport(newReport).catch(err => {
-      console.warn('Report stored in local state. Supabase background write:', err);
-    });
 
     // Update booking status to REPORT_PUBLISHED
     updateBookingStatus(bookingId, 'REPORT_PUBLISHED', 'Laboratory test report published and approved by pathologist.');

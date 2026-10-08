@@ -11,12 +11,10 @@ import {
   Trash2,
   ShieldCheck,
   Building2,
-  AlertCircle,
-  FileUp
+  AlertCircle
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Booking, DiagnosticReport, LabReportResultItem } from '../../types';
-import { uploadReportPdfToSupabase } from '../../lib/supabase';
 
 export const AdminReportManagement: React.FC = () => {
   const { bookings, reports, uploadAndPublishReport, setViewingReport } = useApp();
@@ -28,7 +26,6 @@ export const AdminReportManagement: React.FC = () => {
   const [resultsList, setResultsList] = useState<LabReportResultItem[]>([]);
   const [pathologistNotes, setPathologistNotes] = useState('All biological parameters tested within reference intervals.');
   const [approvedBy, setApprovedBy] = useState('Dr. Vikas Singhal (M.D. Pathologist) & Dr. Neha Gupta (M.D. Microbiologist)');
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const handleOpenUploadModal = (booking: Booking) => {
@@ -74,20 +71,12 @@ export const AdminReportManagement: React.FC = () => {
     if (!selectedBookingForUpload) return;
     setIsUploading(true);
 
-    let storagePath: string | undefined = undefined;
-    if (pdfFile) {
-      const res = await uploadReportPdfToSupabase(selectedBookingForUpload.bookingNumber, pdfFile);
-      storagePath = res.path;
-    }
-
     uploadAndPublishReport(selectedBookingForUpload.id, {
       results: resultsList,
       pathologistNotes,
-      approvedBy,
-      downloadUrl: storagePath
+      approvedBy
     });
     setIsUploading(false);
-    setPdfFile(null);
     setSelectedBookingForUpload(null);
   };
 
@@ -385,34 +374,10 @@ export const AdminReportManagement: React.FC = () => {
                 />
               </div>
 
-              {/* Supabase Storage PDF Upload Option */}
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <FileUp className="w-4 h-4 text-blue-700" />
-                  <label className="text-[11px] font-bold text-slate-800">
-                    Upload Signed PDF Document (Supabase Storage 'reports' bucket)
-                  </label>
-                </div>
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={e => {
-                    if (e.target.files && e.target.files[0]) {
-                      setPdfFile(e.target.files[0]);
-                    }
-                  }}
-                  className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                />
-                <p className="text-[10px] text-slate-500">
-                  Optional: If uploaded, the binary PDF is archived in private Supabase Storage and served via signed URLs.
-                </p>
-              </div>
-
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => {
-                    setPdfFile(null);
                     setSelectedBookingForUpload(null);
                   }}
                   className="px-3 py-1.5 text-slate-600 text-xs"

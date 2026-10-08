@@ -1,7 +1,6 @@
-export const SUPABASE_PRODUCTION_SCHEMA_SQL = `-- =====================================================================
--- B.L. DIAGNOSTIC CENTER — SUPABASE POSTGRESQL PRODUCTION SCHEMA
--- Run this script in your Supabase SQL Editor:
--- https://supabase.com/dashboard/project/dgygaxatbjzjeumlvlgj/sql/new
+export const PRODUCTION_SCHEMA_SQL = `-- =====================================================================
+-- B.L. DIAGNOSTIC CENTER — POSTGRESQL PRODUCTION SCHEMA
+-- Run this script in your PostgreSQL database (Neon, Supabase, or any PostgreSQL):
 -- =====================================================================
 
 -- 1. Enable UUID Extension
@@ -10,7 +9,6 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- 2. USERS TABLE
 CREATE TABLE IF NOT EXISTS public.users (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    supabase_auth_id TEXT UNIQUE,
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(20) NOT NULL,
     email VARCHAR(255),

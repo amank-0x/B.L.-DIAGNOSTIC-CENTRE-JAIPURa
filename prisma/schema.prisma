@@ -1,5 +1,5 @@
 // Prisma Schema for B.L. Diagnostic Center
-// Generated from Supabase PostgreSQL Schema
+// PostgreSQL Schema (compatible with Neon, Supabase, or any PostgreSQL)
 
 generator client {
   provider = "prisma-client-js"

@@ -199,7 +199,6 @@ export interface AuthSettings {
   otpLength: 4 | 6;
   maxLoginAttempts: number;
   jwtSecretConfigured: boolean;
-  supabaseAuthActive: boolean;
 }
 
 export interface WebsiteConfig {

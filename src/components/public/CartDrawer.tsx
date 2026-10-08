@@ -112,6 +112,29 @@ export const CartDrawer: React.FC = () => {
         pincode: newPincode.trim(),
         isDefault: false
       });
+
+      // Save address to database
+      const cleanPhone = (currentUser.phone || currentUser.mobileNumber).replace(/\D/g, '').slice(-10);
+      try {
+        fetch('http://localhost:5000/api/users/address', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: cleanPhone,
+            address: {
+              label: newLabel,
+              addressLine: newAddrLine.trim(),
+              landmark: newLandmark.trim(),
+              city: newCity.trim(),
+              pincode: newPincode.trim(),
+              isDefault: false
+            }
+          })
+        }).catch(err => console.warn('Address background save:', err));
+      } catch (err) {
+        console.warn('Address background save:', err);
+      }
+
       setIsAddingNewAddress(false);
       setNewAddrLine('');
       setNewLandmark('');
@@ -119,7 +142,7 @@ export const CartDrawer: React.FC = () => {
     }
   };
 
-  const handleConfirmOrder = () => {
+  const handleConfirmOrder = async () => {
     setValidationError(null);
 
     // Resolve effective user and phone
@@ -135,13 +158,30 @@ export const CartDrawer: React.FC = () => {
         return;
       }
       effectivePhone = cleanPhone;
+
+      // Register guest user in database
+      try {
+        await fetch('http://localhost:5000/api/users/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: effectiveName,
+            phone: cleanPhone
+          })
+        });
+      } catch (err) {
+        console.warn('Guest user registration background save:', err);
+      }
+
       loginUser(cleanPhone, effectiveName);
     }
 
     // Resolve address
     let userAddr = activeAddress;
+    let isNewAddress = false;
     if (!userAddr) {
       if (newAddrLine.trim() && newPincode.trim()) {
+        isNewAddress = true;
         userAddr = {
           id: `addr-${Date.now()}`,
           userId: effectiveUser?.id || 'guest',
@@ -176,6 +216,29 @@ export const CartDrawer: React.FC = () => {
       mobileNumber: userAddr!.mobileNumber || effectivePhone,
       phone: userAddr!.phone || effectivePhone
     };
+
+    // Save new address to database if it was created during checkout
+    if (isNewAddress && cleanPhoneDigits.length === 10) {
+      try {
+        await fetch('http://localhost:5000/api/users/address', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: cleanPhoneDigits,
+            address: {
+              label: newLabel,
+              addressLine: newAddrLine.trim(),
+              landmark: newLandmark.trim(),
+              city: newCity,
+              pincode: newPincode.trim(),
+              isDefault: true
+            }
+          })
+        }).catch(err => console.warn('New address background save:', err));
+      } catch (err) {
+        console.warn('New address background save:', err);
+      }
+    }
 
     const created = createBooking({
       address: finalAddress,

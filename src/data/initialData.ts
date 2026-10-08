@@ -19,8 +19,7 @@ export const INITIAL_AUTH_SETTINGS = {
   allowPatientDemoLogin: false,
   otpLength: 4 as const,
   maxLoginAttempts: 5,
-  jwtSecretConfigured: true,
-  supabaseAuthActive: true
+  jwtSecretConfigured: true
 };
 
 export const INITIAL_WEBSITE_CONFIG: WebsiteConfig = {

@@ -214,7 +214,7 @@ export const AdminLoginGate: React.FC = () => {
           <div className="bg-slate-950 px-6 py-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-500">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />
-              <span>TLS / Supabase Role-Based Protection</span>
+              <span>TLS / Role-Based Protection</span>
             </span>
             <span>Reg. No. 17562/61248</span>
           </div>
